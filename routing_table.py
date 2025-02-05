@@ -1,6 +1,7 @@
 import re
 
-from common_import import IP_address_generator, LOTUSInputError, BestPathNotExist
+class BestPathNotExist(Exception):
+  pass
 
 class Routing_table:
   def __init__(self, network, policy):

@@ -1,7 +1,15 @@
 import sys
 
-from common_import import IP_address_generator, LOTUSInputError, BestPathNotExist
 from routing_table import Routing_table
+
+class IP_address_generator:
+  def __init__(self):
+    self.index = 1 # To generate unique address
+
+  def get_unique_address(self):
+    address = "10." + str(self.index // 256) + "." + str(self.index % 256) + ".0/24"
+    self.index += 1
+    return address
 
 class AS_class_list:
   def __init__(self):

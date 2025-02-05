@@ -4,9 +4,11 @@ from cmd import Cmd
 import queue
 import yaml
 
-from common_import import IP_address_generator, LOTUSInputError, BestPathNotExist
-from routing_table import Routing_table
 from AS_class      import AS_class_list
+
+class LOTUSInputError(Exception):
+  # Exception class for application-dependent error
+  pass
 
 class Interpreter(Cmd):
   def __init__(self):
