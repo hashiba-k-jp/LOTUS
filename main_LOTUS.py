@@ -102,10 +102,11 @@ class LOTUS():
         else:
             return self.public_aspa_list[customer_asn]
 
-    def setASPV(self, asn:str, switch:Literal["on", "off"], priority:Optional[int]=None) -> None:
+    def setASPV(self, asn:str, switch:Literal["on", "off"], priority:Optional[str]=None) -> None:
         assert isinstance(asn, str)
         assert switch in ["on", "off"]
-        assert priority is None or priority in [1, 2, 3]
+        if switch == "on":
+            assert priority in ["1", "2", "3"]
         as_class = self.as_class_list.get_AS(asn)
         if switch == "on":
             as_class.change_ASPV({"switch": "on", "priority": priority})
@@ -118,6 +119,21 @@ class LOTUS():
             if as_number in [c["src"], c["dst"]]:
                 c_list.append(c)
         return c_list
+
+    def get_adjacent_as(self, asn:str) -> Optional[list[str]]:
+        assert isinstance(asn, str) and asn.isdecimal()
+        try:
+            as_class = self.as_class_list.get_AS(asn)
+        except KeyError:
+            return None
+
+        adj_as_list = []
+        for c in self.connection_list:
+            if asn == c["src"]:
+                adj_as_list.append(c["dst"])
+            elif asn == c["dst"]:
+                adj_as_list.append(c["src"])
+        return adj_as_list
 
     def as_a_is_what_on_c(self, as_a, connection_c) -> Optional[str]:
         if connection_c["type"] == "peer":
@@ -353,6 +369,23 @@ class LOTUS():
             customer_as_list = liet(set(next_customer_as_list))
 
 
+    def autoASPV(self, asn:str, hop_number:int, priority:Optional[str]=None) -> None:
+        assert isinstance(asn, str) and asn.isdecimal()
+        assert isinstance(hop_number, int)
+        assert hop_number > 0
+
+        to_be_deploy_aspv_as = [asn]
+        to_be_checked_adj = [asn]
+        while hop_number > 1:
+            for tmp_asn in to_be_checked_adj:
+                adj_as_list = LOTUS.get_adjacent_as(tmp_asn)
+                to_be_deploy_aspv_as = list(set(to_be_deploy_aspv_as + adj_as_list))
+            to_be_checked_adj = to_be_deploy_aspv_as
+            hop_number -= 1
+        print(f"attack src: {src:6} -> dst: {dst:6} : {to_be_deploy_aspv_as} will deploy ASPV")
+        for tmp_asn in to_be_deploy_aspv_as:
+            LOTUS.setASPV(tmp_asn, "on", "1")
+
 
 
 
@@ -363,11 +396,4 @@ class LOTUS():
 
 # usage example
 if __name__ == "__main__":
-    print("<<RUNNING THIS CODE AS AN EXAMPLE.>>")
-    LOTUS = LOTUS()
-    LOTUS.file_import("sample/sample_situation.yml")
-    LOTUS.run()
-    tmp = LOTUS.getAS('1')
-    LOTUS.addASPA("200", ["10", "1"])
-    tmp2= LOTUS.getASPA()
-    pp.pprint(tmp2)
+    print("\033[43m\033[31mThis file should NOT be executed directly. IMPORT this file as a module instead.\033[39m\033[49m")
