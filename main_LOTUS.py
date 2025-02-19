@@ -6,7 +6,7 @@ import yaml
 import pprint as pp
 
 from typing import Literal, Optional
-from AS_class import AS_class_list
+from AS_class import AS_class_list, AS_class
 
 OUTSIDE_AS = 64512
 
@@ -31,6 +31,13 @@ class LOTUS():
             self.as_class_list.get_AS(asn).show_info()
         except:
             print(f"Error: AS {asn} is NOT registerd.")
+
+    def getAS(self, asn:str) -> Optional[AS_class]:
+        assert isinstance(asn, str) and asn.isdecimal()
+        try:
+            return self.as_class_list.get_AS(asn)
+        except KeyError:
+            return None
 
     def showASList(self, address:Optional[str] = None, sort_flag:bool = False, best_flag:bool = False) -> None:
         assert isinstance(address, Optional[str])
@@ -360,7 +367,7 @@ if __name__ == "__main__":
     LOTUS = LOTUS()
     LOTUS.file_import("sample/sample_situation.yml")
     LOTUS.run()
-    tmp = LOTUS.getASinfo('1')
+    tmp = LOTUS.getAS('1')
     LOTUS.addASPA("200", ["10", "1"])
     tmp2= LOTUS.getASPA()
     pp.pprint(tmp2)
