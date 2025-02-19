@@ -26,6 +26,10 @@ class Interpreter(Cmd):
 ====== LOTUS (Lightweight rOuTing simUlator with aSpa) ====
 ====== 2022 Naoki Umeda at Osaka University ===============
 ===========================================================
+===========================================================
+====== This code is forked and edited by ==================
+====== 2025 Hashiba Keishi at The University os Osaka =====
+===========================================================
 """
   prompt = "LOTUS >> "
 
