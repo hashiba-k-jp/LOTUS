@@ -71,8 +71,8 @@ class LOTUS():
         self.message_queue = tmp_queue
 
     def addConnection(self, type:Literal["peer", "down"], src_asn:str, dst_asn:str) -> None:
-        assert isinstance(src_asn, int)
-        assert isinstance(dst_asn, int)
+        assert isinstance(src_asn, str) and src_asn.isdecimal()
+        assert isinstance(dst_asn, str) and dst_asn.isdecimal()
         assert type in ["peer", "down"]
         if type == "peer":
             self.connection_list.append({"type": "peer", "src": src_asn, "dst": dst_asn})
