@@ -90,7 +90,7 @@ class Routing_table:
             return semi_state
 
         else:
-            assert False, f"Invalid route sender : {route["""come_from"""]}"
+            assert False, f"""Invalid route sender : {route["come_from"]}"""
 
     def update(self, update_message):
         network = update_message["network"]
