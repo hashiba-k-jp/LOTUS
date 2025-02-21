@@ -16,6 +16,7 @@ class Routing_table:
   def set_public_aspa(self, public_aspa_list):
     self.aspa_list = public_aspa_list
 
+  # MEMO    : This function MUST return one of ["Unknown", "Valid", "Invalid"]
   def verify_pair(self, customer_as, provider_as):
     try:
       candidate_provider_list = self.aspa_list[customer_as]
@@ -37,7 +38,7 @@ class Routing_table:
     p = route["path"]
     path_list = p.split("-")
 
-    if re.fullmatch("customer|peer", route["come_from"]):
+    if route["come_from"] in ["customer", "peer"]:
 
       if path_list[0] != neighbor_as:
         return "Invalid"
@@ -88,11 +89,15 @@ class Routing_table:
 
       return semi_state
 
+    else:
+      assert False, f"Invalid route sender : {route["""come_from"""]}"
+
   def update(self, update_message):
     network = update_message["network"]
     path = update_message["path"]
     come_from = update_message["come_from"]
 
+    # QUESTION: ここの値(50, 100, 200)はなんらかのRFCで定められている？もしくは慣習的なものか、このLOTUSの実装で適当に定められたものか？
     if come_from == "peer":
       locpref = 100
     elif come_from == "provider":
@@ -142,7 +147,11 @@ class Routing_table:
         elif p == "aspv":
           if new_route["aspv"] == "Invalid":
             return None
+        else:
+            assert False, f"Invalid routing policy : {p}"
 
+    # QUESTION: ここのexceptionはどこで入る？ new_route["aspv"] でKeyErrorになりうるけどその時には self.table[network] = [new_route] は何？
+    # MEMO    : 割と最初の self.table[network] でそもそもそのNWにrouteが登録されていない時っぽい。** new_route["aspv"] ではKeyErrorにはなり得ない。**
     except KeyError:
       if self.policy[0] == "aspv":
         if new_route["aspv"] == "Invalid":
