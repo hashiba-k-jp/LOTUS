@@ -113,15 +113,19 @@ class LOTUS():
         elif switch == "off":
             as_class.change_ASPV({"switch": "off"})
 
-    def get_connection_with(self, as_number):
+    def get_connection_with(self, as_number:str):
+        assert isinstance(as_number, str)
         c_list = []
         for c in self.connection_list:
             if as_number in [c["src"], c["dst"]]:
                 c_list.append(c)
         return c_list
 
-    def get_adjacent_as(self, asn:str) -> Optional[list[str]]:
+    def get_adjacent_as(self, asn:str, provider:bool=False, customer:bool=False) -> Optional[list[str]]:
         assert isinstance(asn, str) and asn.isdecimal()
+        assert isinstance(provider, bool) and isinstance(customer, bool)
+        assert (provider and customer) == False
+
         try:
             as_class = self.as_class_list.get_AS(asn)
         except KeyError:
@@ -129,9 +133,9 @@ class LOTUS():
 
         adj_as_list = []
         for c in self.connection_list:
-            if asn == c["src"]:
+            if asn == c["src"] and (not provider):
                 adj_as_list.append(c["dst"])
-            elif asn == c["dst"]:
+            elif asn == c["dst"] and (not customer):
                 adj_as_list.append(c["src"])
         return adj_as_list
 
@@ -296,12 +300,11 @@ class LOTUS():
             for adj_as in adj_as_list:
                 self.message_queue.put({"type": "update", "src": src, "dst": str(adj_as), "path": path, "network": str(target_address)})
 
-
     def genOutsideAttack(self, via_asn:str, target_asn:str, hop:int, ASPA_utilize:bool=False) -> None:
         assert isinstance(ASPA_utilize, bool)
         assert isinstance(via_asn, str) and via_asn.isdecimal()
         assert isinstance(target_asn) and target_asn.isdecimal()
-        assert isinstance(hop_num, int)
+        assert isinstance(hop, int)
 
         if not(via_asn in self.as_class_list.class_list.keys()):
             print(f"AS {via_asn} has not been registerd.")
@@ -337,7 +340,7 @@ class LOTUS():
             self.message_queue.put({"type":"update", "src":str(outside_as), "dst":str(via_asn), "network":str(target_address)})
 
     def autoASPA(self, customer_asn:str, hop_number:int) -> None:
-        assert isinstance(customer_asn, int)
+        assert isinstance(customer_asn, str)
         assert isinstance(hop_number, int)
 
         try:
@@ -350,12 +353,12 @@ class LOTUS():
 
         while hop_number != 0 and len(customer_as_list) != 0:
             next_customer_as_list = []
-            for customer_as in next_customer_as_list:
+            for customer_as in customer_as_list:
                 c_list = self.get_connection_with(customer_as)
 
                 provider_list = []
                 for c in c_list:
-                    if self.as_a_is_what_on_c(customer, c) == "customer":
+                    if self.as_a_is_what_on_c(customer_as, c) == "customer":
                         provider_list.append(c["src"])
 
                 next_customer_as_list += provider_list
@@ -366,30 +369,31 @@ class LOTUS():
                 self.public_aspa_list[customer_as] = provider_list
 
             hop_number -= 1
-            customer_as_list = liet(set(next_customer_as_list))
-
+            customer_as_list = list(set(next_customer_as_list))
 
     def autoASPV(self, asn:str, hop_number:int, priority:Optional[str]=None) -> None:
         assert isinstance(asn, str) and asn.isdecimal()
         assert isinstance(hop_number, int)
         assert hop_number > 0
 
-        to_be_deploy_aspv_as = [asn]
-        to_be_checked_adj = [asn]
-        while hop_number > 1:
-            for tmp_asn in to_be_checked_adj:
-                adj_as_list = LOTUS.get_adjacent_as(tmp_asn)
-                to_be_deploy_aspv_as = list(set(to_be_deploy_aspv_as + adj_as_list))
-            to_be_checked_adj = to_be_deploy_aspv_as
+        to_be_deploy_aspv_as_list = [asn]
+        while hop_number != 0 and len(to_be_deploy_aspv_as_list) != 0:
+            next_adj_as_list = []
+            for to_be_deploy_aspv_as in to_be_deploy_aspv_as_list:
+                c_list = self.get_connection_with(to_be_deploy_aspv_as)
+
+                adj_as_list = []
+                for c in c_list:
+                    if to_be_deploy_aspv_as == c["src"]:
+                        adj_as_list.append(c["dst"])
+                    elif to_be_deploy_aspv_as == c["dst"]:
+                        adj_as_list.append(c["src"])
+
+                next_adj_as_list += adj_as_list
+
+                self.setASPV(to_be_deploy_aspv_as, "on", priority)
             hop_number -= 1
-        print(f"attack src: {src:6} -> dst: {dst:6} : {to_be_deploy_aspv_as} will deploy ASPV")
-        for tmp_asn in to_be_deploy_aspv_as:
-            LOTUS.setASPV(tmp_asn, "on", "1")
-
-
-
-
-
+            to_be_deploy_aspv_as_list = list(set(next_adj_as_list))
 
 
 
